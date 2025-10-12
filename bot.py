@@ -388,4 +388,13 @@ withdraw_temp = {}
 def some_function(message):
     bot.send_message(message.chat.id, "⛔ دستور نامعتبر است. از منوی اصلی استفاده کنید.")
 
+# ==========================
+# Start polling (keeps bot running)
+# ==========================
+if __name__ == "__main__":
+    print("Bot is starting...")
+    try:
+        bot.infinity_polling(timeout=60, long_polling_timeout=5)
+    except Exception as e:
+        logging.error(f'Polling error: {e}')
 
