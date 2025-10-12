@@ -10,7 +10,7 @@ logging.basicConfig(filename='bot_log.txt', level=logging.INFO, format='%(asctim
 
 # ====== IMPORTANT ======
 # Replace 'YOUR_BOT_TOKEN_HERE' with your new bot token (regenerate it now if the old one was exposed).
-BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE'
+BOT_TOKEN = '8268425583:AAFkSCeYzXAU2gcyz-tZLSwpzVg0uZ061IU'
 # =======================
 
 # Put your admin ID (int). If you exposed it publicly, it's okay but token is critical to rotate.
