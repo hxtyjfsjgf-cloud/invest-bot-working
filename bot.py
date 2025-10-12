@@ -385,6 +385,7 @@ def set_language(call):
 withdraw_temp = {}
 
 @bot.message_handler(func=lambda message: True)
-def some_function():
-    pass
+def some_function(message):
+    bot.send_message(message.chat.id, "⛔ دستور نامعتبر است. از منوی اصلی استفاده کنید.")
+
 
