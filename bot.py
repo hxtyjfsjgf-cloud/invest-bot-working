@@ -10,8 +10,8 @@ from datetime import datetime
 logging.basicConfig(filename='bot_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 # توکن و تنظیمات
-BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE'  # توکن از BotFather
-ADMIN_ID = 123456789  # ID تلگرام خودت (از @userinfobot بگیر)
+BOT_TOKEN = '8268425583:AAFkSCeYzXAU2gcyz-tZLSwpzVg0uZ061IU'  # توکن از BotFather
+ADMIN_ID = 7989867522  # ID تلگرام خودت (از @userinfobot بگیر)
 
 # آدرس والت‌های ثابت
 TRC20_WALLET = "TQzZgrHNtG9i8mGufpvW12sxFuy"  # والت TRC20 واقعی خودت
