@@ -1,6 +1,7 @@
 import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 import sqlite3
+import time  # اضافه شد!
 import logging
 from datetime import datetime
 
@@ -51,7 +52,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS pending_withdraws (
 )''')
 conn.commit()
 
-# دیکشنری زبان‌ها (کامل نوشته شد, channel حذف, replace error رفع)
+# دیکشنری زبان‌ها (کامل, channel حذف)
 languages = {
     'en': {
         'welcome': """🌟 Welcome to Elite Yield Bot! 🚀
@@ -278,9 +279,14 @@ def start_message(message):
             logging.error(f'Referral error: {e}')
     
     # ایجاد/بروزرسانی کاربر
-    cursor.execute('SELECT language FROM users WHERE user_id = ?', (user_id,))
-    result = cursor.fetchone()
-    conn.commit()
+    try:
+        cursor.execute('SELECT language FROM users WHERE user_id = ?', (user_id,))
+        result = cursor.fetchone()
+        conn.commit()
+    except Exception as e:
+        logging.error(f'DB error in start: {e}')
+        result = None
+    
     lang = result[0] if result else 'en'
     
     if not result:
@@ -305,12 +311,15 @@ def start_message(message):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('lang_'))
 def set_language(call):
-    lang = call.data.split('_')[1]
-    cursor.execute('UPDATE users SET language = ? WHERE user_id = ?', (lang, call.from_user.id))
-    conn.commit()
-    bot.answer_callback_query(call.id, "Language set!")
-    bot.edit_message_text("Language changed!", call.message.chat.id, call.message.message_id)
-    start_message(call.message)
+    try:
+        lang = call.data.split('_')[1]
+        cursor.execute('UPDATE users SET language = ? WHERE user_id = ?', (lang, call.from_user.id))
+        conn.commit()
+        bot.answer_callback_query(call.id, "Language set!")
+        bot.edit_message_text("Language changed!", call.message.chat.id, call.message.message_id)
+        start_message(call.message)
+    except Exception as e:
+        logging.error(f'Lang error: {e}')
 
 @bot.message_handler(func=lambda message: True)
 def handle_menu(message):
@@ -320,7 +329,7 @@ def handle_menu(message):
         user_data = cursor.fetchone()
         conn.commit()
     except Exception as e:
-        logging.error(f'DB error in handle_menu: {e}')
+        logging.error(f'DB error in handle: {e}')
         user_data = None
     
     if user_data:
@@ -351,7 +360,8 @@ def handle_menu(message):
             cursor.execute('SELECT COUNT(*) FROM users WHERE referrer_id = ?', (user_id,))
             ref_count = cursor.fetchone()[0]
             conn.commit()
-        except:
+        except Exception as e:
+            logging.error(f'Ref error: {e}')
             ref_count = 0
         text = languages[lang]['referral_text'].format(ref_link=ref_link, ref_count=ref_count)
         bot.send_message(message.chat.id, text, reply_markup=main_menu(is_admin, lang), parse_mode='Markdown')
@@ -365,18 +375,17 @@ def handle_menu(message):
             cursor.execute('SELECT COUNT(*) FROM users')
             total_users = cursor.fetchone()[0]
             conn.commit()
-        except:
+        except Exception as e:
+            logging.error(f'Admin error: {e}')
             total_users = 0
         text = languages[lang]['admin_panel'].format(total_users=total_users)
         bot.send_message(message.chat.id, text, reply_markup=admin_menu(lang))
     
-    # بقیه admin options with try/except
-    # ... (Users List, Pending, etc. with conn.commit() and try)
-
+    # اضافه کردن بقیه admin options با try/except مشابه
+    
     else:
         bot.send_message(message.chat.id, 'Use menu.', reply_markup=main_menu(is_admin, lang))
 
-# فرآیند واریز
 def process_deposit_amount(message):
     try:
         amount = float(message.text)
@@ -384,7 +393,7 @@ def process_deposit_amount(message):
             bot.send_message(message.chat.id, languages['en']['invalid_amount'])
             return
         user_id = message.from_user.id
-        lang = 'en'  # fallback
+        lang = 'en'
         try:
             cursor.execute('SELECT language FROM users WHERE user_id = ?', (user_id,))
             lang = cursor.fetchone()[0]
@@ -394,19 +403,89 @@ def process_deposit_amount(message):
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton('📤 Confirm', callback_data=f'deposit_confirm_{user_id}_{amount}'))
         bot.send_message(message.chat.id, f"Confirm ${amount} deposit:", reply_markup=markup)
-    except:
+    except Exception as e:
+        logging.error(f'Deposit amount error: {e}')
         bot.send_message(message.chat.id, 'Invalid number!')
 
-# callback_handler with try
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     try:
-        # کد قبلی callback
-        pass
+        data = call.data
+        if data.startswith('deposit_confirm_'):
+            parts = data.split('_')
+            target_user_id = int(parts[2])
+            amount = float(parts[3])
+            try:
+                cursor.execute('SELECT username FROM users WHERE user_id = ?', (target_user_id,))
+                username = cursor.fetchone()[0]
+                conn.commit()
+            except:
+                username = 'Unknown'
+            
+            current_time = int(time.time())
+            cursor.execute('INSERT INTO pending_deposits (user_id, username, amount, created_at) VALUES (?, ?, ?, ?)',
+                          (target_user_id, username, amount, current_time))
+            deposit_id = cursor.lastrowid
+            conn.commit()
+            
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton('✅ Confirm', callback_data=f'admin_confirm_dep_{deposit_id}'),
+                      InlineKeyboardButton('❌ Reject', callback_data=f'admin_reject_dep_{deposit_id}'))
+            
+            admin_msg = f"💳 New Deposit: User {username} (ID: {target_user_id})\nAmount: ${amount}"
+            bot.send_message(ADMIN_ID, admin_msg, reply_markup=markup)
+            
+            bot.answer_callback_query(call.id, "✅ Request sent!")
+            bot.edit_message_text("✅ Submitted! Wait for admin.", call.message.chat.id, call.message.message_id)
+        
+        # بقیه callbackها با try
     except Exception as e:
         logging.error(f'Callback error: {e}')
         bot.answer_callback_query(call.id, "Error!")
 
+# فرآیند برداشت (مشابه, با try)
+
+def process_withdraw_request(message):
+    try:
+        amount = float(message.text)
+        user_id = message.from_user.id
+        try:
+            cursor.execute('SELECT balance, username FROM users WHERE user_id = ?', (user_id,))
+            user_data = cursor.fetchone()
+            conn.commit()
+        except:
+            user_data = None
+        
+        if not user_data or amount > user_data[0] or amount < 5:
+            bot.send_message(message.chat.id, languages['en']['invalid_amount'])
+            return
+        
+        username = user_data[1]
+        msg = bot.send_message(message.chat.id, languages['en']['enter_wallet'])
+        bot.register_next_step_handler(msg, lambda m: process_withdraw_wallet(m, amount, username))
+    except Exception as e:
+        logging.error(f'Withdraw error: {e}')
+        bot.send_message(message.chat.id, languages['en']['invalid_amount'])
+
+def process_withdraw_wallet(message, amount, username):
+    wallet_address = message.text
+    user_id = message.from_user.id
+    
+    current_time = int(time.time())
+    cursor.execute('INSERT INTO pending_withdraws (user_id, username, amount, wallet_address, created_at) VALUES (?, ?, ?, ?, ?)',
+                  (user_id, username, amount, wallet_address, current_time))
+    conn.commit()
+    
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton('✅ Confirm', callback_data=f'admin_confirm_wd_{cursor.lastrowid}'),
+              InlineKeyboardButton('❌ Reject', callback_data=f'admin_reject_wd_{cursor.lastrowid}'))
+    
+    admin_msg = f"💸 New Withdrawal: User {username} (ID: {user_id})\nAmount: ${amount}\nWallet: {wallet_address}"
+    bot.send_message(ADMIN_ID, admin_msg, reply_markup=markup)
+    
+    bot.send_message(message.chat.id, languages['en']['withdraw_submitted'])
+
+# اجرای ربات
 if __name__ == '__main__':
     print("🚀 Elite Yield Bot starting...")
     bot.polling(none_stop=True)
