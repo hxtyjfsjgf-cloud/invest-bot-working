@@ -385,4 +385,6 @@ def set_language(call):
 withdraw_temp = {}
 
 @bot.message_handler(func=lambda message: True)
-def
+def some_function():
+    pass
+
