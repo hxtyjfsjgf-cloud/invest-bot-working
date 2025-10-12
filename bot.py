@@ -8,7 +8,7 @@ from datetime import datetime
 
 logging.basicConfig(filename='bot_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 
-BOT_TOKEN = 'YOUR_BOT_TOKEN'
+BOT_TOKEN = '8268425583:AAFkSCeYzXAU2gcyz-tZLSwpzVg0uZ061IU'
 ADMIN_ID = 123456789
 bot = telebot.TeleBot(BOT_TOKEN)
 
