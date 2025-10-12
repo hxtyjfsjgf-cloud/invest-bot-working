@@ -22,7 +22,6 @@ conn = sqlite3.connect('elite_yield.db', check_same_thread=False)
 def get_cursor():
     return conn.cursor()
 
-# دیتابیس (کامنت پاک)
 cursor = get_cursor()
 cursor.execute('''CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY,
@@ -63,7 +62,6 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS support_messages (
 )''')
 conn.commit()
 
-# زبان‌ها (کامل, ترجمه btnها)
 languages = {
     'en': {
         'welcome': """🌟 Welcome to Elite Yield Bot! 🚀
@@ -357,8 +355,8 @@ def start_message(message):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('lang_'))
 def set_language(call):
-    cursor = get_cursor()
     lang = call.data.split('_')[1]
+    cursor = get_cursor()
     cursor.execute('UPDATE users SET language = ? WHERE user_id = ?', (lang, call.from_user.id))
     conn.commit()
     bot.answer_callback_query(call.id, "Language set!")
@@ -455,7 +453,7 @@ def forward_support_to_admin(message):
     except Exception as e:
         logging.error(f'Support forward error: {e}')
 
-# بقیه توابع با cursor = get_cursor() و conn.commit()
+# بقیه توابع (process_deposit_amount, callback_handler, add_daily_profit, etc.) با try/except و conn.commit()
 
 def add_daily_profit():
     while True:
