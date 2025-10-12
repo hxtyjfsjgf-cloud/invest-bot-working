@@ -16,6 +16,10 @@ ADMIN_USERNAME = '@YourAdminUsername'  # username ادمین
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
+# آدرس والت‌های ثابت
+TRC20_WALLET = "TQzZgrHNtG9i8mGufpvW12sxFuy"  # والت TRC20 واقعی خودت
+BEP20_WALLET = "0x7485e33695b722aA071A868bb6959533a3e449b02E"  # والت BEP20 واقعی خودت
+
 # دیتابیس
 conn = sqlite3.connect('elite_yield.db', check_same_thread=False)
 cursor = conn.cursor()
@@ -79,7 +83,7 @@ Send USDT to one of these addresses:
 ⚠️ Only USDT - no other tokens!
 
 After sending, click "Confirm Deposit" below:""",
-        'enter_amount': '💸 Enter amount to withdraw (min $5):',
+        'enter_deposit_amount': 'Enter deposit amount (min $10):',
         'invalid_amount': '❌ Invalid amount or insufficient balance!',
         'enter_wallet': 'Enter your wallet address (TRC20/BEP20):',
         'withdraw_submitted': '✅ Withdrawal request submitted! Waiting for admin approval...',
@@ -135,7 +139,7 @@ USDT را به یکی از آدرس‌ها ارسال کنید:
 ⚠️ فقط USDT - توکن دیگر نه!
 
 پس از ارسال, "تأیید واریز" را کلیک کنید:""",
-        'enter_amount': '💸 مبلغ برداشت را وارد کنید (حداقل 5$):',
+        'enter_deposit_amount': 'مبلغ واریز را وارد کنید (حداقل 10$):',
         'invalid_amount': '❌ مبلغ نامعتبر یا موجودی ناکافی!',
         'enter_wallet': 'آدرس والت خود را وارد کنید (TRC20/BEP20):',
         'withdraw_submitted': '✅ درخواست برداشت ثبت شد! منتظر تأیید ادمین باشید...',
@@ -191,7 +195,7 @@ USDT'yi şu adreslere gönderin:
 ⚠️ Sadece USDT - diğer token yok!
 
 Gönderdikten sonra "Yatırımı Onayla" tıklayın:""",
-        'enter_amount': '💸 Çekmek istediğiniz miktarı girin (min $5):',
+        'enter_deposit_amount': 'Yatırım miktarını girin (min $10):',
         'invalid_amount': '❌ Geçersiz miktar veya yetersiz bakiye!',
         'enter_wallet': 'Cüzdan adresinizi girin (TRC20/BEP20):',
         'withdraw_submitted': '✅ Çekim isteği gönderildi! Admin onayı bekleniyor...',
@@ -247,7 +251,7 @@ Sorunlar için iletişime geçin!""",
 ⚠️ فقط USDT - لا توكنات أخرى!
 
 بعد الإرسال, اضغط "تأكيد الإيداع": """,
-        'enter_amount': '💸 أدخل المبلغ للسحب (حد أدنى $5):',
+        'enter_deposit_amount': 'أدخل مبلغ الإيداع (حد أدنى $10):',
         'invalid_amount': '❌ مبلغ غير صالح أو رصيد غير كاف!',
         'enter_wallet': 'أدخل عنوان محفظتك (TRC20/BEP20):',
         'withdraw_submitted': '✅ تم إرسال طلب السحب! انتظر موافقة الإدارة...',
@@ -277,71 +281,82 @@ Sorunlar için iletişime geçin!""",
     }
 }
 
-# آدرس والت‌های ثابت
-TRC20_WALLET = "TQzZgrHNtG9i8mGufpvW12sxFuy"  # والت TRC20 واقعی خودت
-BEP20_WALLET = "0x7485e33695b722aA071A868bb6959533a3e449b02E"  # والت BEP20 واقعی خودت
+# تابع get_level (بدون تغییر)
 
-# تابع get_level (همون قبلی)
+# تابع main_menu (با btn_support, بدون channel)
 
-# تابع main_menu (بدون تغییر, فقط btn_support نگه دار)
+def main_menu(is_admin=False, lang='en'):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    btn_balance = KeyboardButton('💰 Balance')
+    btn_deposit = KeyboardButton('💳 Deposit')
+    btn_withdraw = KeyboardButton('💸 Withdraw')
+    btn_referral = KeyboardButton('👥 Referral')
+    btn_support = KeyboardButton('📞 Support')
+    markup.add(btn_balance, btn_deposit)
+    markup.add(btn_withdraw, btn_referral)
+    markup.add(btn_support)
+    
+    if is_admin:
+        btn_admin = KeyboardButton('🛠 Admin Panel')
+        markup.add(btn_admin)
+    return markup
 
-# تابع admin_menu (همون)
+# تابع admin_menu (بدون تغییر)
 
-# تابع language_menu (همون)
+# تابع language_menu (بدون تغییر)
 
-# هندلر /start (همون, با fallback lang = 'en' اگر None)
+# هندلر /start (با fallback 'en')
 
-# هندلر انتخاب زبان (همون)
-
-# هندلر منو (همون, با support بدون channel)
-
-elif message.text == '📞 Support':
-    text = languages[lang]['support'].format(ADMIN_USERNAME=ADMIN_USERNAME, ADMIN_ID=ADMIN_ID)
-    bot.send_message(message.chat.id, text, reply_markup=main_menu(is_admin, lang), parse_mode='Markdown')
-
-# بقیه هندلرها (Deposit, Withdraw, Referral, Admin) همون
-
-# فرآیند واریز/برداشت (همون)
-
-# callback_handler با try/except برای safety
-@bot.callback_query_handler(func=lambda call: True)
-def callback_handler(call):
+@bot.message_handler(commands=['start'])
+def start_message(message):
+    user_id = message.from_user.id
+    username = message.from_user.username or f"User_{user_id}"
+    args = message.text.split()
+    
+    # چک referral
+    referrer_id = None
+    if len(args) > 1 and args[1].startswith('ref_'):
+        try:
+            referrer_id = int(args[1].split('_')[1])
+            if referrer_id != user_id:
+                cursor.execute('UPDATE users SET referrer_id = ? WHERE user_id = ?', (referrer_id, user_id))
+                conn.commit()
+                bot.send_message(referrer_id, '🎉 New referral joined! You\'ll earn 5% commission on their deposits!')
+        except:
+            pass
+    
+    # ایجاد/بروزرسانی کاربر
+    cursor.execute('SELECT language FROM users WHERE user_id = ?', (user_id,))
+    result = cursor.fetchone()
+    lang = result[0] if result else 'en'
+    
+    if not result:
+        current_time = int(time.time())
+        cursor.execute('INSERT INTO users (user_id, username, created_at) VALUES (?, ?, ?)', (user_id, username, current_time))
+        conn.commit()
+        logging.info(f'New user: {user_id} - {username}')
+        # انتخاب زبان اول
+        bot.send_message(message.chat.id, languages['en']['choose_language'], reply_markup=language_menu())
+        return
+    
+    cursor.execute('UPDATE users SET username = ? WHERE user_id = ?', (username, user_id))
+    conn.commit()
+    
+    is_admin = user_id == ADMIN_ID
+    
+    # تصویر بنر + خوش‌آمد
     try:
-        data = call.data
-        if data.startswith('deposit_confirm_'):
-            parts = data.split('_')
-            target_user_id = int(parts[2])
-            amount = float(parts[3])
-            username = cursor.execute('SELECT username FROM users WHERE user_id = ?', (target_user_id,)).fetchone()[0]
-            
-            current_time = int(time.time())
-            cursor.execute('INSERT INTO pending_deposits (user_id, username, amount, created_at) VALUES (?, ?, ?, ?)',
-                          (target_user_id, username, amount, current_time))
-            deposit_id = cursor.lastrowid
-            conn.commit()
-            
-            markup = InlineKeyboardMarkup()
-            markup.add(InlineKeyboardButton('✅ Confirm', callback_data=f'admin_confirm_dep_{deposit_id}'),
-                      InlineKeyboardButton('❌ Reject', callback_data=f'admin_reject_dep_{deposit_id}'))
-            
-            admin_msg = f"💳 New Deposit: User {username} (ID: {target_user_id})\nAmount: ${amount}"
-            bot.send_message(ADMIN_ID, admin_msg, reply_markup=markup)
-            
-            bot.answer_callback_query(call.id, "✅ Request sent!")
-            bot.edit_message_text("✅ Submitted! Wait for admin.", call.message.chat.id, call.message.message_id)
-        
-        elif data.startswith('admin_confirm_dep_'):
-            # همون کد قبلی
-            
-        elif data.startswith('admin_reject_dep_'):
-            # همون
-            
-        # مشابه برای withdraw...
-    except Exception as e:
-        logging.error(f"Callback error: {e}")
-        bot.answer_callback_query(call.id, "Error! Try again.")
+        with open('welcome_banner.jpg', 'rb') as banner:
+            bot.send_photo(
+                message.chat.id, 
+                banner,
+                caption=languages[lang]['welcome'],
+                reply_markup=main_menu(is_admin, lang)
+            )
+    except FileNotFoundError:
+        bot.send_message(message.chat.id, languages[lang]['welcome'], reply_markup=main_menu(is_admin, lang))
 
-# فرآیند پخش و بکاپ (همون)
+# بقیه کد (callback_handler, handle_menu, etc.) بدون تغییر
 
 # اجرای ربات
 if __name__ == '__main__':
