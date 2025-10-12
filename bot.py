@@ -74,11 +74,12 @@ Start earning passive income today! 📈""",
         'deposit_instructions': """💳 Deposit Instructions:
 
 Send USDT to:
-🌐 TRC20: `{TRC20_WALLET}`
+🌐 TRC20: `{d.,vm.d,d,fflkvmgklmlbgkmblg4gb4gb45}`
 🌐 BEP20: `{BEP20_WALLET}`
 
 Min $10. Confirm after sending.""",
-        'enter_deposit_amount': 'Enter amount (min $10):',
+        'enter_deposit_amount': 'Enter amount (min $10
+        fgbvfgbdfg5fg5bf55fgb55):',
         'invalid_amount': '❌ Invalid! Min $10.',
         'enter_wallet': 'Enter wallet (TRC20/BEP20):',
         'withdraw_submitted': '✅ Submitted! Wait for admin.',
