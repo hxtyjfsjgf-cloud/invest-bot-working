@@ -22,6 +22,7 @@ conn = sqlite3.connect('elite_yield.db', check_same_thread=False)
 def get_cursor():
     return conn.cursor()
 
+# دیتابیس (کامنت پاک)
 cursor = get_cursor()
 cursor.execute('''CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY,
@@ -62,9 +63,23 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS support_messages (
 )''')
 conn.commit()
 
+# زبان‌ها (کامل, ترجمه btnها)
 languages = {
     'en': {
-        'welcome': 'Welcome! 🚀',
+        'welcome': """🌟 Welcome to Elite Yield Bot! 🚀
+
+Unlock up to 21.7% DAILY returns on your USDT investments! 💰
+
+💎 Levels based on deposit:
+• $10-99: 16.6%
+• $100-799: 17.9%  
+• $800-2399: 19.6%
+• $2400-5999: 21.7%
+
+💳 Min deposit: $10 USDT
+🌐 Networks: TRC20 or BEP20
+
+Start earning passive income today! 📈""",
         'balance_btn': 'Balance',
         'deposit_btn': 'Deposit',
         'withdraw_btn': 'Withdraw',
@@ -72,31 +87,191 @@ languages = {
         'support_btn': 'Support',
         'admin_btn': 'Admin Panel',
         'support_tickets_btn': 'Support Tickets',
-        'balance': 'Balance: ${balance}',
-        'deposit_instructions': 'Send to TRC20: {trc} BEP20: {bep}\nEnter amount:',
-        'enter_amount': 'Enter amount:',
+        'balance': """Your Balance: ${balance:.2f} USDT
+Total Profit: ${total_profit:.2f} USDT
+Level: {level}""",
+        'deposit_instructions': """Deposit Instructions:
+
+Send USDT to:
+TRC20: `{TRC20_WALLET}`
+BEP20: `{BEP20_WALLET}`
+
+Min $10. Confirm after sending.""",
+        'enter_amount': 'Enter amount (min $10):',
+        'invalid_amount': 'Invalid amount!',
         'confirm_deposit': 'Confirm ${amount}',
-        'withdraw_submitted': 'Submitted!',
-        'referral_text': 'Referral: {link}',
-        'support': 'Send message to support:',
-        'choose_language': 'Choose language:',
+        'withdraw_submitted': 'Withdrawal request submitted! Waiting for admin approval...',
+        'referral_text': """Your Referral Link:
+`{ref_link}`
+
+Referrals: {ref_count}
+Earn 10% L1, 8% L2, 3% L3 commissions!""",
+        'support': 'Send your message to support:',
+        'choose_language': 'Choose your language:',
         'english': 'English',
         'persian': 'Persian',
         'turkish': 'Turkish',
         'arabic': 'Arabic',
-        'daily_profit': 'Profit added: ${profit}!'
+        'daily_profit': 'Daily profit added: ${profit:.2f} ({rate}% rate)!\nNew balance: ${new_balance:.2f}'
     },
-    # fa, tr, ar مشابه, ترجمه btnها
-    'fa': {k: v.replace('Balance', 'موجودی').replace('Deposit', 'واریز') for k, v in languages['en'].items()},
-    'tr': {k: v.replace('Balance', 'Bakiye').replace('Deposit', 'Yatırım') for k, v in languages['en'].items()},
-    'ar': {k: v.replace('Balance', 'الرصيد').replace('Deposit', 'إيداع') for k, v in languages['en'].items()}
+    'fa': {
+        'welcome': """خوش آمدید به Elite Yield Bot! 🚀
+
+بازدهی تا 21.7% روزانه روی سرمایه USDT خود را باز کنید! 💰
+
+سطوح بر اساس واریز:
+• 10-99$: 16.6%
+• 100-799$: 17.9%  
+• 800-2399$: 19.6%
+• 2400-5999$: 21.7%
+
+حداقل واریز: 10$ USDT
+شبکه‌ها: TRC20 یا BEP20
+
+از امروز درآمد غیرفعال کسب کنید! 📈""",
+        'balance_btn': 'موجودی',
+        'deposit_btn': 'واریز',
+        'withdraw_btn': 'برداشت',
+        'referral_btn': 'رفرال',
+        'support_btn': 'پشتیبانی',
+        'admin_btn': 'پنل ادمین',
+        'support_tickets_btn': 'تیکت‌های پشتیبانی',
+        'balance': """موجودی شما: ${balance:.2f} USDT
+سود کل: ${total_profit:.2f} USDT
+سطح: {level}""",
+        'deposit_instructions': """دستورالعمل واریز:
+
+USDT را به:
+TRC20: `{TRC20_WALLET}`
+BEP20: `{BEP20_WALLET}`
+
+حداقل 10$. پس از ارسال تأیید کنید.""",
+        'enter_amount': 'مبلغ را وارد کنید (حداقل 10$):',
+        'invalid_amount': 'نامعتبر!',
+        'confirm_deposit': 'تأیید ${amount}',
+        'withdraw_submitted': 'درخواست برداشت ثبت شد! منتظر ادمین.',
+        'referral_text': """لینک رفرال شما:
+`{ref_link}`
+
+رفرال‌ها: {ref_count}
+10% L1, 8% L2, 3% L3 کمیسیون!""",
+        'support': 'پیام خود را به پشتیبانی بفرستید:',
+        'choose_language': 'زبان انتخاب کنید:',
+        'english': 'English',
+        'persian': 'فارسی',
+        'turkish': 'Türkçe',
+        'arabic': 'العربية',
+        'daily_profit': 'سود روزانه اضافه شد: ${profit:.2f} ({rate}% نرخ)!\nموجودی جدید: ${new_balance:.2f}'
+    },
+    'tr': {
+        'welcome': """Elite Yield Bot'a Hoş Geldiniz! 🚀
+
+USDT yatırımlarınızda günlük %21.7'ye kadar getiri kilidini açın! 💰
+
+Yatırım bazlı seviyeler:
+• $10-99: %16.6
+• $100-799: %17.9  
+• $800-2399: %19.6
+• $2400-5999: %21.7
+
+Min yatırım: $10 USDT
+Ağlar: TRC20 veya BEP20
+
+Bugün pasif gelir kazanmaya başlayın! 📈""",
+        'balance_btn': 'Bakiye',
+        'deposit_btn': 'Yatırım',
+        'withdraw_btn': 'Çekim',
+        'referral_btn': 'Referans',
+        'support_btn': 'Destek',
+        'admin_btn': 'Admin Paneli',
+        'support_tickets_btn': 'Destek Biletleri',
+        'balance': """Bakiyeniz: ${balance:.2f} USDT
+Toplam Kar: ${total_profit:.2f} USDT
+Seviye: {level}""",
+        'deposit_instructions': """Yatırım Talimatları:
+
+USDT'yi gönderin:
+TRC20: `{TRC20_WALLET}`
+BEP20: `{BEP20_WALLET}`
+
+Min $10. Gönderdikten sonra onaylayın.""",
+        'enter_amount': 'Miktarı girin (min $10):',
+        'invalid_amount': 'Geçersiz!',
+        'confirm_deposit': '${amount} Onayla',
+        'withdraw_submitted': 'Çekim isteği gönderildi! Admin bekleniyor...',
+        'referral_text': """Referans Linkiniz:
+`{ref_link}`
+
+Referanslar: {ref_count}
+%10 L1, %8 L2, %3 L3 komisyon!""",
+        'support': 'Destek mesajınızı gönderin:',
+        'choose_language': 'Dil seçin:',
+        'english': 'English',
+        'persian': 'فارسی',
+        'turkish': 'Türkçe',
+        'arabic': 'العربية',
+        'daily_profit': 'Günlük kar eklendi: ${profit:.2f} (%{rate} oran)!\nYeni bakiye: ${new_balance:.2f}'
+    },
+    'ar': {
+        'welcome': """مرحبا بك في Elite Yield Bot! 🚀
+
+افتح عوائد يومية تصل إلى 21.7% على استثمارات USDT الخاصة بك! 💰
+
+مستويات بناءً على الإيداع:
+• $10-99: 16.6%
+• $100-799: 17.9%  
+• $800-2399: 19.6%
+• $2400-5999: 21.7%
+
+الحد الأدنى للإيداع: $10 USDT
+الشبكات: TRC20 أو BEP20
+
+ابدأ في كسب الدخل السلبي اليوم! 📈""",
+        'balance_btn': 'الرصيد',
+        'deposit_btn': 'إيداع',
+        'withdraw_btn': 'سحب',
+        'referral_btn': 'إحالة',
+        'support_btn': 'دعم',
+        'admin_btn': 'لوحة الإدارة',
+        'support_tickets_btn': 'تذاكر الدعم',
+        'balance': """رصيدك: ${balance:.2f} USDT
+الربح الإجمالي: ${total_profit:.2f} USDT
+المستوى: {level}""",
+        'deposit_instructions': """تعليمات الإيداع:
+
+أرسل USDT إلى:
+TRC20: `{TRC20_WALLET}`
+BEP20: `{BEP20_WALLET}`
+
+الحد الأدنى $10. اضغط تأكيد بعد الإرسال.""",
+        'enter_amount': 'أدخل المبلغ (حد أدنى $10):',
+        'invalid_amount': 'غير صالح!',
+        'confirm_deposit': 'تأكيد ${amount}',
+        'withdraw_submitted': 'تم إرسال طلب السحب! انتظر الإدارة...',
+        'referral_text': """رابط الإحالة الخاص بك:
+`{ref_link}`
+
+الإحالات: {ref_count}
+10% L1, 8% L2, 3% L3 عمولة!""",
+        'support': 'أرسل رسالتك إلى الدعم:',
+        'choose_language': 'اختر اللغة:',
+        'english': 'English',
+        'persian': 'فارسی',
+        'turkish': 'Türkçe',
+        'arabic': 'العربية',
+        'daily_profit': 'تم إضافة الربح اليومي: ${profit:.2f} (نسبة {rate}%)!\nالرصيد الجديد: ${new_balance:.2f}'
+    }
 }
 
 def get_profit_rate(amount):
-    if 2400 <= amount <= 5999: return 0.217
-    if 800 <= amount <= 2399: return 0.196
-    if 100 <= amount <= 799: return 0.179
-    if 10 <= amount <= 99: return 0.166
+    if 2400 <= amount <= 5999:
+        return 0.217
+    if 800 <= amount <= 2399:
+        return 0.196
+    if 100 <= amount <= 799:
+        return 0.179
+    if 10 <= amount <= 99:
+        return 0.166
     return 0
 
 def main_menu(is_admin=False, lang='en'):
@@ -114,7 +289,7 @@ def admin_menu(lang='en'):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add('Users List', 'Pending Requests')
     markup.add('Statistics', l['support_tickets_btn'])
-    markup.add('Back')
+    markup.add('Back to Main')
     return markup
 
 def language_menu():
@@ -150,7 +325,7 @@ def start_message(message):
                 cursor = get_cursor()
                 cursor.execute('UPDATE users SET referrer_id = ? WHERE user_id = ?', (referrer_id, user_id))
                 conn.commit()
-                bot.send_message(referrer_id, 'New referral joined!')
+                bot.send_message(referrer_id, 'New referral joined! You\'ll earn commissions from 3 levels!')
         except Exception as e:
             logging.error(f'Referral error: {e}')
     
@@ -182,8 +357,8 @@ def start_message(message):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('lang_'))
 def set_language(call):
-    lang = call.data.split('_')[1]
     cursor = get_cursor()
+    lang = call.data.split('_')[1]
     cursor.execute('UPDATE users SET language = ? WHERE user_id = ?', (lang, call.from_user.id))
     conn.commit()
     bot.answer_callback_query(call.id, "Language set!")
@@ -305,5 +480,5 @@ def add_daily_profit():
 
 if __name__ == '__main__':
     threading.Thread(target=add_daily_profit, daemon=True).start()
-    print("🚀 Elite Yield Bot starting...")
+    print("Elite Yield Bot starting...")
     bot.polling(none_stop=True)
