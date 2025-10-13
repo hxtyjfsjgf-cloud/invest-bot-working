@@ -14,8 +14,8 @@ ADMIN_USERNAME = '@YourAdminUsername'
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-TRC20_WALLET = "TQzZgrHNtG9i8mGufpvW12sxFuy"
-BEP20_WALLET = "0x7485e33695b722aA071A868bb6959533a3e449b02E"
+TRC20_WALLET = "TCq3z3JGrHNsTnG49ri8mg5XfUfp7VVwi2"
+BEP20_WALLET = "0x7485e3305b722Aa071A868bb058953a3e449b02E"
 
 conn = sqlite3.connect('elite_yield.db', check_same_thread=False)
 
@@ -88,14 +88,14 @@ Start earning passive income today! 📈""",
         'balance': """Your Balance: ${balance:.2f} USDT
 Total Profit: ${total_profit:.2f} USDT
 Level: {level}""",
-        'deposit_instructions': """Deposit Instructions:
+        'deposit_instructions': """Minimum Deposit $10.00 💰
+Send USDT Amount to This Wallet Address 👇
 
-Send USDT to one of these addresses:
-TRC20 (Tron): `{TRC20_WALLET}`
-BEP20 (BSC): `{BEP20_WALLET}`
+🛜 Network : 🟢 Tron(TRC20)
+{TRC20_WALLET}
 
-Minimum: $10
-Only USDT - no other tokens!
+🛜 Network : 🌕 BNB(BEP20)
+{BEP20_WALLET}
 
 Enter amount to deposit:""",
         'enter_amount': 'Enter amount (min $10):',
@@ -140,14 +140,14 @@ Earn 10% L1, 8% L2, 3% L3 commissions!""",
         'balance': """موجودی شما: ${balance:.2f} USDT
 سود کل: ${total_profit:.2f} USDT
 سطح: {level}""",
-        'deposit_instructions': """دستورالعمل واریز:
+        'deposit_instructions': """حداقل واریز 10.00$ 💰
+مبلغ USDT را به این آدرس والت ارسال کنید 👇
 
-USDT را به یکی از آدرس‌ها ارسال کنید:
-TRC20 (Tron): `{TRC20_WALLET}`
-BEP20 (BSC): `{BEP20_WALLET}`
+🛜 شبکه : 🟢 Tron(TRC20)
+{TRC20_WALLET}
 
-حداقل: 10$
-فقط USDT - توکن دیگر نه!
+🛜 شبکه : 🌕 BNB(BEP20)
+{BEP20_WALLET}
 
 مبلغ واریز را وارد کنید:""",
         'enter_amount': 'مبلغ را وارد کنید (حداقل 10$):',
@@ -192,14 +192,14 @@ Bugün pasif gelir kazanmaya başlayın! 📈""",
         'balance': """Bakiyeniz: ${balance:.2f} USDT
 Toplam Kar: ${total_profit:.2f} USDT
 Seviye: {level}""",
-        'deposit_instructions': """Yatırım Talimatları:
+        'deposit_instructions': """Minimum Yatırım $10.00 💰
+USDT Miktarını Bu Cüzdan Adresine Gönderin 👇
 
-USDT'yi şu adreslere gönderin:
-TRC20 (Tron): `{TRC20_WALLET}`
-BEP20 (BSC): `{BEP20_WALLET}`
+🛜 Ağ : 🟢 Tron(TRC20)
+{TRC20_WALLET}
 
-Minimum: $10
-Sadece USDT - diğer token yok!
+🛜 Ağ : 🌕 BNB(BEP20)
+{BEP20_WALLET}
 
 Yatırım miktarını girin:""",
         'enter_amount': 'Miktarı girin (min $10):',
@@ -244,14 +244,14 @@ Referanslar: {ref_count}
         'balance': """رصيدك: ${balance:.2f} USDT
 الربح الإجمالي: ${total_profit:.2f} USDT
 المستوى: {level}""",
-        'deposit_instructions': """تعليمات الإيداع:
+        'deposit_instructions': """الحد الأدنى للإيداع $10.00 💰
+أرسل مبلغ USDT إلى هذا العنوان 👇
 
-أرسل USDT إلى أحد هذه العناوين:
-TRC20 (Tron): `{TRC20_WALLET}`
-BEP20 (BSC): `{BEP20_WALLET}`
+🛜 الشبكة : 🟢 Tron(TRC20)
+{TRC20_WALLET}
 
-الحد الأدنى $10
-فقط USDT - لا توكنات أخرى!
+🛜 الشبكة : 🌕 BNB(BEP20)
+{BEP20_WALLET}
 
 أدخل المبلغ للإيداع:""",
         'enter_amount': 'أدخل المبلغ (حد أدنى $10):',
@@ -656,6 +656,11 @@ def add_daily_profit():
             logging.error(f'Profit error: {e}')
         time.sleep(3600)
 
+def keep_alive():
+    while True:
+        print("Keeping bot alive...")
+        time.sleep(300)  # هر 5 دقیقه
+
 def start_polling():
     while True:
         try:
@@ -666,5 +671,6 @@ def start_polling():
 
 if __name__ == '__main__':
     threading.Thread(target=add_daily_profit, daemon=True).start()
+    threading.Thread(target=keep_alive, daemon=True).start()
     print("Elite Yield Bot starting...")
     start_polling()
